@@ -1,8 +1,7 @@
-import { AspectRatio, Heading } from '@chakra-ui/react'
+import { Heading } from '@chakra-ui/react'
 import StudyModal from './StudyModal'
 
 function App() {
-
   return (
     <>
       <Heading

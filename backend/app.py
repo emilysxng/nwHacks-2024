@@ -25,5 +25,4 @@ def handle_frame(data):
 
 if __name__ == '__main__':
     print(sys.version)
-    print("ALKSDJFKLAJSLDKFJALSDKFJLKASJDFLKASJDFLKAJSDLFKJASKLDJ")
     socketio.run(app, port=3001)
