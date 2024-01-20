@@ -1,12 +1,21 @@
-import { Box } from '@chakra-ui/react'
+import { AspectRatio, Heading } from '@chakra-ui/react'
+import StudyModal from './StudyModal'
 
 function App() {
 
   return (
     <>
-      <Box bg='tomato' w='100%' p={4} color='white' >
-        This is the Box
-      </Box>
+      <Heading
+        fontSize={{ base: '4xl', sm: '5xl', md: '6xl' }}
+        fontWeight="bold"
+        textAlign="center"
+        bgGradient="linear(to-l, #7928CA, #FF0080)"
+        bgClip="text"
+        mt={4}
+      >
+        Study with me!
+      </Heading>
+      <StudyModal />
     </>
   )
 }
