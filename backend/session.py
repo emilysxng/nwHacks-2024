@@ -96,3 +96,6 @@ class Session:
 
     def get_max_class_count(self, classification):
         return self.__maxClassCounts[classification]
+    
+    def is_active(self):
+        return self.__startTime is not None and self.__stopTime is None

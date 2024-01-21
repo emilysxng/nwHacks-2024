@@ -107,7 +107,7 @@ function StudyModal() {
             </HStack>
         </Center>
         <Center>
-            <WebcamWrapper studyState={studyState} ref={webRef}/>
+            <WebcamWrapper ref={webRef}/>
         </Center>
         <Center mt="20px">
             <Button onClick={handleButtonClick} size='lg'>End Study Session</Button>
