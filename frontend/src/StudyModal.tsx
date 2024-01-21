@@ -16,19 +16,24 @@ import {
     Box,
     AbsoluteCenter,
     Center,
+    Text,
+    CircularProgress,
+    CircularProgressLabel,
   } from '@chakra-ui/react'
 import { useState } from 'react'
 import WebcamWrapper from './WebcamWrapper'
+import useCountdown from './useCountdown'
   
 function StudyModal() {
     const { isOpen, onOpen, onClose } = useDisclosure()
+    const { secondsLeft, ratio, start } = useCountdown()
     
     const [goalInput, setGoalInput] = useState('')
     const [sessionInput, setSessionInput] = useState('')
     const [shortBreakInput, setShortBreakInput] = useState('')
     const [longBreakInput, setLongBreakInput] = useState('')
     const [amountInput, setAmountInput] = useState('')
-    const [buttonClicked, setButtonClicked] = useState(false); // New state variable
+    const [, setButtonClicked] = useState(false); // New state variable
     const [studyState, setStudyState] = useState('idle');
 
     const handleGoalInputChange = (e: any) => setGoalInput(e.target.value)
@@ -43,9 +48,10 @@ function StudyModal() {
     const isLongBreakError = longBreakInput === ''
     const isAmountError = amountInput === ''
 
+    const time = 60*(sessionInput as unknown as number);
     const handleButtonClick = () => {
         // Implement the logic to handle different states
-        if (studyState === 'idle') {
+        if (studyState === 'idle' || studyState === 'statistics') {
             setGoalInput('');
             setSessionInput('');
             setShortBreakInput('');
@@ -54,14 +60,11 @@ function StudyModal() {
             setButtonClicked(true);
             onClose();
             setStudyState('studying');
+            start(time)
         } else if (studyState === 'studying') {
           // Handle transitioning to the statistics page
           // You can set up your statistics page component and navigate to it here
           setStudyState('statistics');
-        } else if (studyState === 'statistics') {
-          // Handle transitioning to a new study session or another state as needed
-          onClose();
-          setStudyState('studying');
         }
     }
     
@@ -70,13 +73,17 @@ function StudyModal() {
       {studyState === 'idle' && (
         <Box position='relative' h='200px'>
             <AbsoluteCenter p='4' color='white' axis='both'>
-                <Button onClick={onOpen} size='lg'>Open Modal</Button>
+                <Button onClick={onOpen} size='lg'>Start Studying</Button>
             </AbsoluteCenter>
         </Box>)}
 
-    {/* Conditionally render WebcamWrapper based on buttonClicked state */}
       {studyState === 'studying' && (
       <Box>
+        <Center>
+            <CircularProgress value={ratio} color='green.400' size="100px">
+                <CircularProgressLabel>{secondsLeft}</CircularProgressLabel>
+            </CircularProgress>
+        </Center>
         <Center>
             <WebcamWrapper />
         </Center>
@@ -88,8 +95,10 @@ function StudyModal() {
       {studyState === 'statistics' && (
         <Box>
             <Center>
-                Stats
-                <Button onClick={onOpen} size='lg'>Open Modal</Button>
+                <Text fontSize='3xl'>Stats</Text>
+            </Center>
+            <Center>
+                <Button onClick={onOpen} size='lg' mt="10px">Start Studying</Button>
             </Center>
         </Box>
       )}
