@@ -1,2 +1,1 @@
-# nwHacks-2024
-nwHacks 2024 Project Submission
+# CramCam: A nwHacks 2024 Submission
