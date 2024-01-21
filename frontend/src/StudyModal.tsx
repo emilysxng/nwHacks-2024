@@ -29,12 +29,13 @@ function StudyModal() {
     const [longBreakInput, setLongBreakInput] = useState('')
     const [amountInput, setAmountInput] = useState('')
     const [buttonClicked, setButtonClicked] = useState(false); // New state variable
+    const [studyState, setStudyState] = useState('idle');
 
-    const handleGoalInputChange = (e) => setGoalInput(e.target.value)
-    const handleSessionInputChange = (e) => setSessionInput(e.target.value)
-    const handleShortBreakInputChange = (e) => setShortBreakInput(e.target.value)
-    const handleLongBreakInputChange = (e) => setLongBreakInput(e.target.value)
-    const handleAmountInputChange = (e) => setAmountInput(e.target.value)
+    const handleGoalInputChange = (e: any) => setGoalInput(e.target.value)
+    const handleSessionInputChange = (e : any) => setSessionInput(e.target.value)
+    const handleShortBreakInputChange = (e: any) => setShortBreakInput(e.target.value)
+    const handleLongBreakInputChange = (e: any) => setLongBreakInput(e.target.value)
+    const handleAmountInputChange = (e: any) => setAmountInput(e.target.value)
 
     const isGoalError = goalInput === ''
     const isSessionError = sessionInput === ''
@@ -42,24 +43,31 @@ function StudyModal() {
     const isLongBreakError = longBreakInput === ''
     const isAmountError = amountInput === ''
 
-    // close modal and set the buttonClicked state to true
     const handleButtonClick = () => {
-        setGoalInput('');
-        setSessionInput('');
-        setShortBreakInput('');
-        setLongBreakInput('');
-        setAmountInput('');
-        setButtonClicked(true);
-        onClose();
-    };
-
-    const handleButtonClick1 = () => {
-        setButtonClicked(false);
+        // Implement the logic to handle different states
+        if (studyState === 'idle') {
+            setGoalInput('');
+            setSessionInput('');
+            setShortBreakInput('');
+            setLongBreakInput('');
+            setAmountInput('');
+            setButtonClicked(true);
+            onClose();
+            setStudyState('studying');
+        } else if (studyState === 'studying') {
+          // Handle transitioning to the statistics page
+          // You can set up your statistics page component and navigate to it here
+          setStudyState('statistics');
+        } else if (studyState === 'statistics') {
+          // Handle transitioning to a new study session or another state as needed
+          onClose();
+          setStudyState('studying');
+        }
     }
     
   return (
     <>
-      {!buttonClicked && (
+      {studyState === 'idle' && (
         <Box position='relative' h='200px'>
             <AbsoluteCenter p='4' color='white' axis='both'>
                 <Button onClick={onOpen} size='lg'>Open Modal</Button>
@@ -67,15 +75,24 @@ function StudyModal() {
         </Box>)}
 
     {/* Conditionally render WebcamWrapper based on buttonClicked state */}
-      {buttonClicked && (
+      {studyState === 'studying' && (
       <Box>
         <Center>
             <WebcamWrapper />
         </Center>
         <Center mt="20px">
-            <Button onClick={handleButtonClick1} size='lg'>End Study Session</Button>
+            <Button onClick={handleButtonClick} size='lg'>End Study Session</Button>
         </Center>
       </Box>)}
+
+      {studyState === 'statistics' && (
+        <Box>
+            <Center>
+                Stats
+                <Button onClick={onOpen} size='lg'>Open Modal</Button>
+            </Center>
+        </Box>
+      )}
 
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
@@ -138,7 +155,7 @@ function StudyModal() {
                     <FormErrorMessage>Amount of sessions is required.</FormErrorMessage>
                 )}
             </FormControl>
-            
+
           </ModalBody>
 
           <ModalFooter>
