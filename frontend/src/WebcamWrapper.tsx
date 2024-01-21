@@ -14,8 +14,12 @@ export default function WebcamWrapper() {
   };
 
   useEffect(() => {
-    const interval = setInterval(capture, 2000); // Adjust the interval as needed
-    return () => clearInterval(interval);
+    socket.emit('start_study');
+    const interval = setInterval(capture, 200); // Adjust the interval as needed
+    return () => {
+      clearInterval(interval);
+      socket.emit('end_study');
+    };
   }, []);
   
   return (
