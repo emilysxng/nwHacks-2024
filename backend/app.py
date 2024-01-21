@@ -95,7 +95,6 @@ def majorityOfLastFrames(thisFrame, frameCount):
         lastFrames.append(thisFrame)
         return lastFrames.count(thisFrame) / frameCount >  0.7
 
-
 @socketio.on('end_study')
 def end_study():
     print('Client ended study session')
