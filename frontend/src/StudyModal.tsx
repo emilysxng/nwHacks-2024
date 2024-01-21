@@ -44,9 +44,18 @@ function StudyModal() {
 
     // close modal and set the buttonClicked state to true
     const handleButtonClick = () => {
+        setGoalInput('');
+        setSessionInput('');
+        setShortBreakInput('');
+        setLongBreakInput('');
+        setAmountInput('');
         setButtonClicked(true);
         onClose();
     };
+
+    const handleButtonClick1 = () => {
+        setButtonClicked(false);
+    }
     
   return (
     <>
@@ -57,8 +66,16 @@ function StudyModal() {
             </AbsoluteCenter>
         </Box>)}
 
-        {/* Conditionally render WebcamWrapper based on buttonClicked state */}
-      {buttonClicked && <Center><WebcamWrapper /></Center>}
+    {/* Conditionally render WebcamWrapper based on buttonClicked state */}
+      {buttonClicked && (
+      <Box>
+        <Center>
+            <WebcamWrapper />
+        </Center>
+        <Center mt="20px">
+            <Button onClick={handleButtonClick1} size='lg'>End Study Session</Button>
+        </Center>
+      </Box>)}
 
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
@@ -125,7 +142,7 @@ function StudyModal() {
           </ModalBody>
 
           <ModalFooter>
-            <Button colorScheme='blue' mr={3} onClick={handleButtonClick}>
+            <Button colorScheme='blue' mr={3} onClick={handleButtonClick} isDisabled={isGoalError || isAmountError || isLongBreakError || isShortBreakError || isSessionError}>
               Start Studying!
             </Button>
           </ModalFooter>
