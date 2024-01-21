@@ -52,11 +52,13 @@ def handle_disconnect():
 
 @socketio.on('start_study')
 def start_study():
-    global session, lastFrame
+    global session, lastFrame, audioFuture
     lastFrame = None
     session = Session()
     session.start_stopwatch()
     print('Client started study')
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        audioFuture = executor.submit(recordAudio)
 
 @socketio.on('frame')
 def handle_frame(data: str):
@@ -98,6 +100,22 @@ def majorityOfLastFrames(thisFrame, frameCount):
 def end_study():
     print('Client ended study session')
     session.stop_stopwatch()
+    #getting data info
+    audioFuture.result()
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+    wf = wave.open("output.wav", 'wb')
+    wf.setnchannels(2)
+    wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
+    wf.setframerate(44100)
+    wf.writeframes(b''.join(frames))
+    wf.close()
+    wav_data = wavio.read("output.wav")
+    audio_data = wav_data.data.T[0]
+    chunks = np.array_split(audio_data, audio_data.size/(44100/2))
+    avgdB = mean([20*math.log10(np.abs(math.sqrt(mean(chunk**2))) ) for chunk in chunks]) #half second chunks
+
     # clean up variables for analysis
     studyProportion = session.get_study_frame_count / session.get_total_frame_count
     lookDownProportion = session.get_distr_frame_count / session.get_total_frame_count
@@ -114,6 +132,7 @@ def end_study():
         "afkCount": session.get_afk_count(),
         "afkLongestLength": afkLongestLength,
         "sittingLongestLength": sittingLongestLength,
+        "averageDecibel": avgdB
     })
 
     # print("Total study session length:", session.get_elapsed_time, "seconds")
@@ -145,32 +164,25 @@ def eyeDetection(videoFrame, cascadeClassifierEyes):
     return eyes
 
 def recordAudio():
-    global stream
-    chunk = 1024
-    sample_format = pyaudio.paInt16  #16 bits per sample
-    channels = 2
-    fs = 44100
-    filename = "output.wav"
+    global stream, p, frames
     p = pyaudio.PyAudio()
-
-    stream = p.open(format=sample_format,
-                    channels=channels,
-                    rate=fs,
-                    frames_per_buffer=chunk,
+    stream = p.open(format=pyaudio.paInt16,
+                    channels=2,
+                    rate=44100,
+                    frames_per_buffer=1024,
                     input=True)
     frames = []
-    while True:
-        data = stream.read(chunk)
+    while session.isActive is True:
+        data = stream.read(1024)
         frames.append(data)
 
-#unused
-def AFKTimerEnd():
-    global AFKTimerActive, AFKElapsedTime, AFKLongestLength
-    if (AFKTimerActive is True):
-            AFKElapsedTime = round(time.time() - AFKTimeStart, 2)
-            AFKTimerActive = False
-            if (AFKElapsedTime > AFKLongestLength):
-                AFKLongestLength = AFKElapsedTime
+#def AFKTimerEnd():
+#    global AFKTimerActive, AFKElapsedTime, AFKLongestLength
+#    if (AFKTimerActive is True):
+#            AFKElapsedTime = round(time.time() - AFKTimeStart, 2)
+#            AFKTimerActive = False
+#            if (AFKElapsedTime > AFKLongestLength):
+#                AFKLongestLength = AFKElapsedTime
         
 if __name__ == '__main__':
     socketio.run(app, port=3001)
