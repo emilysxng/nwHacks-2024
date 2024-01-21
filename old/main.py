@@ -1,5 +1,4 @@
-from old.study_session import startStudySession
-from old.test import measure_decibels
+from study_session import startStudySession
 
 def main():
     startStudySession()

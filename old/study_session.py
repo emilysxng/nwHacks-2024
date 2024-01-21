@@ -4,7 +4,7 @@ import time
 def startStudySession():
     # the cascadeClassifier class constructor takes a trained classifier file as its argument
     cascadeClassifierFace = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
-    cascadeClassifierEyes = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+    cascadeClassifierEyes = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_eye.xml")
     videoFeed = cv2.VideoCapture(0)
     startTime = time.time()
     studyFrameCount = 0
@@ -21,7 +21,7 @@ def startStudySession():
         totalFrameCount += 1
         face = faceDetection(videoFrame, cascadeClassifierFace)
         eyes = eyeDetection(videoFrame, cascadeClassifierEyes)
-        # cv2.imshow("Active Study Session", videoFrame) 
+        cv2.imshow("Active Study Session", videoFrame) 
 
         if len(face) > 0 and len(eyes) > 0:
             print("Studying")
