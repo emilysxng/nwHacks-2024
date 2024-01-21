@@ -5,8 +5,8 @@ from flask_cors import CORS
 import cv2, time, base64
 from PIL import Image
 import numpy as np
-from backend.session import Classification, Session
-from old.study_session import faceDetection, eyeDetection
+from session import Classification, Session
+from study_session import faceDetection, eyeDetection
 import pyaudio
 from statistics import mean
 import wave
@@ -116,10 +116,10 @@ def end_study():
     avgdB = mean([20*math.log10(np.abs(math.sqrt(mean(chunk**2))) ) for chunk in chunks]) #half second chunks
 
     # clean up variables for analysis
-    studyProportion = session.get_study_frame_count / session.get_total_frame_count
-    lookDownProportion = session.get_distr_frame_count / session.get_total_frame_count
-    afkProportion = session.get_afk_frame_count / session.get_total_frame_count
-    avgFrameTime = session.get_elapsed_time / session.get_total_frame_count
+    studyProportion = session.get_study_frame_count() / session.get_total_frame_count()
+    lookDownProportion = session.get_distr_frame_count() / session.get_total_frame_count()
+    afkProportion = session.get_afk_frame_count() / session.get_total_frame_count()
+    avgFrameTime = session.get_elapsed_time() / session.get_total_frame_count()
     afkLongestLength = session.get_max_class_count(Classification.AFK) * avgFrameTime
     sittingLongestLength = (session.get_max_class_count(Classification.STUDY)
                             + session.get_max_class_count(Classification.DISTRACTED)) * avgFrameTime
