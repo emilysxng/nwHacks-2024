@@ -5,11 +5,11 @@ from flask_cors import CORS
 import cv2, time, base64
 from PIL import Image
 import numpy as np
-from backend.session import Classification, Session
-from old.study_session import faceDetection, eyeDetection
+from session import Classification, Session
+from study_session import faceDetection, eyeDetection
 
 app = Flask(__name__)
-CORS(app, origins="*");
+CORS(app, origins="*")
 socketio = SocketIO(app, cors_allowed_origins="*", cors_credentials=True)
 cascadeClassifierFace = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
 cascadeClassifierEyes = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_eye.xml")
@@ -54,7 +54,7 @@ def start_study():
 
 @socketio.on('frame')
 def handle_frame(data: str):
-    if session is None:
+    if session is None or data is None:
         return
     encoded = data.split(",", 1)[1]
     decoded = base64.b64decode(encoded)
@@ -93,14 +93,14 @@ def end_study():
     print('Client ended study session')
     session.stop_stopwatch()
     # clean up variables for analysis
-    studyProportion = session.get_study_frame_count / session.get_total_frame_count
-    lookDownProportion = session.get_distr_frame_count / session.get_total_frame_count;
-    afkProportion = session.get_afk_frame_count / session.get_total_frame_count;
+    studyProportion = session.get_study_frame_count() / session.get_total_frame_count()
+    lookDownProportion = session.get_distr_frame_count() / session.get_total_frame_count()
+    afkProportion = session.get_afk_frame_count() / session.get_total_frame_count()
 
-    avgFrameTime = session.get_elapsed_time / session.get_total_frame_count
-    afkLongestLength = session.get_max_class_count(Classification.AFK) * avgFrameTime;
+    avgFrameTime = session.get_elapsed_time() / session.get_total_frame_count()
+    afkLongestLength = session.get_max_class_count(Classification.AFK) * avgFrameTime
     sittingLongestLength = (session.get_max_class_count(Classification.STUDY)
-                            + session.get_max_class_count(Classification.DISTRACTED)) * avgFrameTime;
+                            + session.get_max_class_count(Classification.DISTRACTED)) * avgFrameTime
 
     socketio.emit('study_session_end', {
         "studyProportion": studyProportion,
@@ -119,7 +119,7 @@ def end_study():
     # print("The longest time you spent AFK is", AFKLongestLength, "seconds")
     # print("The longest time you spent sitting down is", sittingLongestLength, "seconds")
 
-    socketio.emit()
+    # socketio.emit()
 
 def faceDetection(videoFrame, cascadeClassifierFace):
     greyVideoFrame = cv2.cvtColor(videoFrame, cv2.COLOR_BGR2GRAY)
@@ -139,13 +139,13 @@ def eyeDetection(videoFrame, cascadeClassifierEyes):
         cv2.rectangle(videoFrame, (x, y), (x + w, y + h), (0, 255, 0), 2)
     return eyes
 
-def AFKTimerEnd():
-    global AFKTimerActive, AFKElapsedTime, AFKLongestLength
-    if (AFKTimerActive is True):
-            AFKElapsedTime = round(time.time() - AFKTimeStart, 2)
-            AFKTimerActive = False
-            if (AFKElapsedTime > AFKLongestLength):
-                AFKLongestLength = AFKElapsedTime
+# def AFKTimerEnd():
+#     global AFKTimerActive, AFKElapsedTime, AFKLongestLength
+#     if (AFKTimerActive is True):
+#             AFKElapsedTime = round(time.time() - AFKTimeStart, 2)
+#             AFKTimerActive = False
+#             if (AFKElapsedTime > AFKLongestLength):
+#                 AFKLongestLength = AFKElapsedTime
         
 if __name__ == '__main__':
     socketio.run(app, port=3001)

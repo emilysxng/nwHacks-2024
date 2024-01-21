@@ -20,9 +20,12 @@ import {
     CircularProgress,
     CircularProgressLabel,
   } from '@chakra-ui/react'
-import { useState } from 'react'
-import WebcamWrapper from './WebcamWrapper'
+import { useEffect, useRef, useState } from 'react'
+import WebcamWrapper, { WebcamWrapperMethods } from './WebcamWrapper'
 import useCountdown from './useCountdown'
+import io from 'socket.io-client'
+
+const socket = io('http://localhost:3001');
   
 function StudyModal() {
     const { isOpen, onOpen, onClose } = useDisclosure()
@@ -67,6 +70,23 @@ function StudyModal() {
           setStudyState('statistics');
         }
     }
+
+    const webRef = useRef<WebcamWrapperMethods>(null);
+
+    useEffect(() => {
+        let interval;
+        if (studyState === 'studying') {
+            socket.emit('start_study');
+            interval = setInterval(() => {
+                if (studyState === 'studying') {
+                    webRef.current?.capture();
+                }
+            });
+        } else if (studyState === 'statistics') {
+            clearInterval(interval);
+            socket.emit('end_study');
+        }
+    }, [studyState]);
     
   return (
     <>
@@ -85,7 +105,7 @@ function StudyModal() {
             </CircularProgress>
         </Center>
         <Center>
-            <WebcamWrapper />
+            <WebcamWrapper studyState={studyState} ref={webRef}/>
         </Center>
         <Center mt="20px">
             <Button onClick={handleButtonClick} size='lg'>End Study Session</Button>
