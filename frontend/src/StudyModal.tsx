@@ -22,11 +22,13 @@ import {
     HStack,
     VStack,
     StackDivider,
+    Image,
   } from '@chakra-ui/react'
 import { useEffect, useRef, useState } from 'react'
 import WebcamWrapper, { WebcamWrapperMethods } from './WebcamWrapper'
 import useCountdown from './useCountdown'
 import io from 'socket.io-client'
+import logo from './assets/cramcam logo.png'
 
 interface Statistics {
     studyProportion: number,
@@ -42,6 +44,7 @@ const socket = io('http://localhost:3001');
 function StudyModal() {
     const { isOpen, onOpen, onClose } = useDisclosure()
     const { secondsLeft, percentage, start } = useCountdown()
+
     
     const [goalInput, setGoalInput] = useState('')
     const [sessionInput, setSessionInput] = useState('')
@@ -116,11 +119,16 @@ function StudyModal() {
   return (
     <>
       {studyState === 'idle' && (
-        <Box position='relative' h='200px'>
-            <AbsoluteCenter p='4' color='white' axis='both'>
-                <Button onClick={onOpen} size='lg'>Start Studying</Button>
-            </AbsoluteCenter>
-        </Box>)}
+        <><Box position='relative' h='200px'>
+                  <AbsoluteCenter p='4' color='white' axis='both'>
+                      <Button onClick={onOpen} size='lg'>Start Studying</Button>
+                  </AbsoluteCenter>
+              </Box>
+                <Center p='4' color='white'>
+                    <Image src={logo} alt='Dan Abramov' boxSize='400px'/>
+                  </Center>
+            </>
+        )}
 
       {studyState === 'studying' && (
       <Box>
@@ -150,23 +158,25 @@ function StudyModal() {
                 <Text fontSize='3xl'>Study Stats:</Text>
             </Center>
             <Center>
-                <Text fontSize='lg'>Study Proportion: {studyProportion}%</Text>
+                <Text fontSize='lg'>Study Proportion: {studyProportion}%, Look Down Proportion: {lookDownProportion}%, AFK Proportion: {afkProportion}%</Text>
             </Center>
             <Center>
-                <Text fontSize='lg'>Sitting Longest Length: {sittingLongestLength} secs</Text>
+                <Text fontSize='lg'>Sitting: The longest time you spent sitting down was {sittingLongestLength} seconds.</Text>
             </Center>
-            <Center>
-                <Text fontSize='lg'>Look Down Proportion: {lookDownProportion}%</Text>
-            </Center>
-            <Center>
-                <Text fontSize='lg'>AFK Proportion: {afkProportion}%</Text>
-            </Center>
-            <Center>
-                <Text fontSize='lg'>AFK Longest Length: {afkLongestLength} secs</Text>
-            </Center>
-            <Center>
-                <Text fontSize='lg'>AFK Count: {afkCount} times</Text>
-            </Center>
+            {sittingLongestLength !== undefined ? (
+                sittingLongestLength < 600 ? (
+                <Center>
+                    <Text fontSize='lg'>You are frequently disrupting your flow state and breaking your concentration, lowering your quality of work. Consider extending your study periods.</Text>
+                </Center>
+                ) : (
+                    <Center>
+                    <Text fontSize='lg'>
+                        Consider following the 30-30 rule where every 30 minutes, take a break for at least 30 seconds. During the break, it is recommended to stand up, stretch, or take a brief water break. This is to reduce eye strain, improve circulation, prevent burnout, and other health benefits!</Text>
+                </Center>
+                )
+            ) : (
+                <Text>Loading...</Text>
+            )}
             <Center>
                 <Button onClick={onOpen} size='lg' mt="10px">Start Studying Again!</Button>
             </Center>
@@ -180,7 +190,7 @@ function StudyModal() {
           <ModalCloseButton />
           <ModalBody>
             <FormControl isInvalid={isGoalError}>
-                <FormLabel>Goal</FormLabel>
+                <FormLabel>Goal:</FormLabel>
                 <Input type='string' value={goalInput} onChange={handleGoalInputChange} />
                 {!isGoalError ? (
                     <FormHelperText>
@@ -191,11 +201,11 @@ function StudyModal() {
                 )}
             </FormControl>
             <FormControl isInvalid={isSessionError}>
-                <FormLabel>Study Session</FormLabel>
+                <FormLabel>Time:</FormLabel>
                 <Input type='number' value={sessionInput} onChange={handleSessionInputChange} />
                 {!isSessionError ? (
                     <FormHelperText>
-                    Enter time for your study session .
+                        Enter time for your study session .
                     </FormHelperText>
                 ) : (
                     <FormErrorMessage>Time for study session is required.</FormErrorMessage>
