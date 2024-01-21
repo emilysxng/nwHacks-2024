@@ -5,6 +5,7 @@ from flask_cors import CORS
 import cv2, time, base64
 from PIL import Image
 import numpy as np
+from backend.session import Classification, Session
 from old.study_session import faceDetection, eyeDetection
 
 app = Flask(__name__)
@@ -12,17 +13,21 @@ CORS(app, origins="*");
 socketio = SocketIO(app, cors_allowed_origins="*", cors_credentials=True)
 cascadeClassifierFace = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
 cascadeClassifierEyes = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_eye.xml")
-sessionActive = False
-studyFrameCount = 0
-lookDownFrameCount = 0
-AFKFrameCount = 0
-isAFK = False
-AFKCount = 0
-AFKTimerActive = False
-AFKLongestLength = 0
-sittingTimerActive = False
-sittingLongestLength = 0
-totalFrameCount = 0
+session: Session = None
+FRAME_AVG_COUNT = 10
+lastFrames = []
+
+# sessionActive = False
+# studyFrameCount = 0
+# lookDownFrameCount = 0
+# AFKFrameCount = 0
+# isAFK = False
+# AFKCount = 0
+# AFKTimerActive = False
+# AFKLongestLength = 0
+# sittingTimerActive = False
+# sittingLongestLength = 0
+# totalFrameCount = 0
 
 @app.route('/')
 def index():
@@ -40,79 +45,79 @@ def handle_disconnect():
 
 @socketio.on('start_study')
 def start_study():
-    global startTime, sessionActive
+    global session, lastFrame
+    lastFrame = None
+    session = Session()
+    session.start_stopwatch()
     print('Client started study')
-    startTime = time.time()
-    sessionActive = True
+    
 
 @socketio.on('frame')
 def handle_frame(data: str):
-    global studyFrameCount, lookDownFrameCount, AFKFrameCount, totalFrameCount, AFKCount, startTime
-    global AFKTimerActive, AFKLongestLength, AFKTimeStart, AFKElapsedTime, sittingTimerActive, sittingLongestLength
-    print('Client sent frame')
-    totalFrameCount += 1
-    if not sessionActive:
+    if session is None:
         return
     encoded = data.split(",", 1)[1]
-    # print(encoded)
     decoded = base64.b64decode(encoded)
-    # convert the bytes to a PIL image
     image = Image.open(BytesIO(decoded))
-    # convert the PIL image to an OpenCV image
-    # note: PIL reads in RGB by default, openCV reads in BGR
     opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
     face = faceDetection(opencv_image, cascadeClassifierFace)
     eyes = eyeDetection(opencv_image, cascadeClassifierEyes)
-
+    session.increment_total_frame_count()
     if len(face) > 0 and len(eyes) >= 2:
-        print("Studying")
-        studyFrameCount += 1
-        isAFK = False
-        AFKTimerEnd()
-        if (sittingTimerActive is False):
-            sittingTimeStart = time.time()
-            sittingTimerActive = True
-
+        thisFrame = Classification.STUDY
+        session.increment_study_frame_count()
     elif len(face) > 0 and len(eyes) < 2: 
-        print("Looking away")
-        lookDownFrameCount += 1
-        isAFK = False
-        AFKTimerEnd()
-        if (sittingTimerActive is False):
-            sittingTimeStart = time.time()
-            sittingTimerActive = True
-
+        thisFrame = Classification.DISTRACTED
+        session.increment_distr_frame_count()
     else:
-        print("AFK")
-        AFKFrameCount += 1
-        if (isAFK is False):
-            isAFK = True
-            AFKCount += 1
-            if (AFKTimerActive is False):
-                AFKTimeStart = time.time()
-                AFKTimerActive = True
-        if (sittingTimerActive is True):
-            sittingTimerActive = False
-            elapsedSittingTime = round(time.time() - sittingTimeStart, 2)
-            if (elapsedSittingTime > sittingLongestLength):
-                sittingLongestLength = elapsedSittingTime
+        thisFrame = Classification.AFK
+        session.increment_afk_frame_count()
+    if majorityOfLastFrames(thisFrame, FRAME_AVG_COUNT):
+        session.increment_class_count(thisFrame)
+    else:
+        session.reset_class_count()
+
+def majorityOfLastFrames(thisFrame, frameCount):
+    global lastFrames
+    if len(lastFrames) < frameCount:
+        lastFrames.append(thisFrame)
+        return lastFrames.count(thisFrame) / len(lastFrames) >  0.7
+    else:
+        lastFrames.pop(0)
+        lastFrames.append(thisFrame)
+        return lastFrames.count(thisFrame) / frameCount >  0.7
+
 
 @socketio.on('end_study')
 def end_study():
     print('Client ended study session')
+    session.stop_stopwatch()
     # clean up variables for analysis
-    studyPercent = round(studyFrameCount / totalFrameCount * 100, 2)
-    lookDownPercent = round(lookDownFrameCount / totalFrameCount * 100, 2)
-    AFKPercent = round(AFKFrameCount / totalFrameCount * 100, 2)
-    elapsedTime = round(time.time() - startTime, 2)
+    studyProportion = session.get_study_frame_count / session.get_total_frame_count
+    lookDownProportion = session.get_distr_frame_count / session.get_total_frame_count;
+    afkProportion = session.get_afk_frame_count / session.get_total_frame_count;
 
-    print("Total study session length:", elapsedTime, "seconds")
-    print("Percent of time spent working:", studyPercent, "%")
-    print("Percent of time spent on your phone:", lookDownPercent, "%")
-    print("Percent of time spent AFK:", AFKPercent, "%")
-    print("Approximate number of times you left your desk:", AFKCount)
-    print("The longest time you spent AFK is", AFKLongestLength, "seconds")
-    print("The longest time you spent sitting down is", sittingLongestLength, "seconds")
+    avgFrameTime = session.get_elapsed_time / session.get_total_frame_count
+    afkLongestLength = session.get_max_class_count(Classification.AFK) * avgFrameTime;
+    sittingLongestLength = (session.get_max_class_count(Classification.STUDY)
+                            + session.get_max_class_count(Classification.DISTRACTED)) * avgFrameTime;
+
+    socketio.emit('study_session_end', {
+        "studyProportion": studyProportion,
+        "lookDownProportion": lookDownProportion,
+        "afkProportion": afkProportion,
+        "afkCount": session.get_afk_count(),
+        "afkLongestLength": afkLongestLength,
+        "sittingLongestLength": sittingLongestLength,
+    })
+
+    # print("Total study session length:", session.get_elapsed_time, "seconds")
+    # print("Percent of time spent working:", studyPercent, "%")
+    # print("Percent of time spent on your phone:", lookDownPercent, "%")
+    # print("Percent of time spent AFK:", AFKPercent, "%")
+    # print("Approximate number of times you left your desk:", AFKCount)
+    # print("The longest time you spent AFK is", AFKLongestLength, "seconds")
+    # print("The longest time you spent sitting down is", sittingLongestLength, "seconds")
 
     socketio.emit()
 
