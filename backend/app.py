@@ -5,7 +5,7 @@ from flask_cors import CORS
 import cv2, time, base64
 from PIL import Image
 import numpy as np
-from study_session import faceDetection, eyeDetection
+from old.study_session import faceDetection, eyeDetection
 
 app = Flask(__name__)
 CORS(app, origins="*");
@@ -50,6 +50,7 @@ def handle_frame(data: str):
     global studyFrameCount, lookDownFrameCount, AFKFrameCount, totalFrameCount, AFKCount, startTime
     global AFKTimerActive, AFKLongestLength, AFKTimeStart, AFKElapsedTime, sittingTimerActive, sittingLongestLength
     print('Client sent frame')
+    totalFrameCount += 1
     if not sessionActive:
         return
     encoded = data.split(",", 1)[1]
@@ -62,7 +63,6 @@ def handle_frame(data: str):
     opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
     face = faceDetection(opencv_image, cascadeClassifierFace)
     eyes = eyeDetection(opencv_image, cascadeClassifierEyes)
-    # cv2.imshow("Active Study Session", videoFrame) 
 
     if len(face) > 0 and len(eyes) >= 2:
         print("Studying")
@@ -70,7 +70,8 @@ def handle_frame(data: str):
         isAFK = False
         AFKTimerEnd()
         if (sittingTimerActive is False):
-            sittingTimeStart = sittingTimerInit(sittingTimerActive)
+            sittingTimeStart = time.time()
+            sittingTimerActive = True
 
     elif len(face) > 0 and len(eyes) < 2: 
         print("Looking away")
@@ -78,7 +79,8 @@ def handle_frame(data: str):
         isAFK = False
         AFKTimerEnd()
         if (sittingTimerActive is False):
-            sittingTimeStart = sittingTimerInit(sittingTimerActive)
+            sittingTimeStart = time.time()
+            sittingTimerActive = True
 
     else:
         print("AFK")
@@ -97,7 +99,7 @@ def handle_frame(data: str):
 
 @socketio.on('end_study')
 def end_study():
-    print('Client ended study')
+    print('Client ended study session')
     # clean up variables for analysis
     studyPercent = round(studyFrameCount / totalFrameCount * 100, 2)
     lookDownPercent = round(lookDownFrameCount / totalFrameCount * 100, 2)
@@ -110,7 +112,7 @@ def end_study():
     print("Percent of time spent AFK:", AFKPercent, "%")
     print("Approximate number of times you left your desk:", AFKCount)
     print("The longest time you spent AFK is", AFKLongestLength, "seconds")
-    print("The longest time you spent sitting down is," sittingLongestLength, "seconds")
+    print("The longest time you spent sitting down is", sittingLongestLength, "seconds")
 
     socketio.emit()
 
@@ -133,15 +135,12 @@ def eyeDetection(videoFrame, cascadeClassifierEyes):
     return eyes
 
 def AFKTimerEnd():
+    global AFKTimerActive, AFKElapsedTime, AFKLongestLength
     if (AFKTimerActive is True):
             AFKElapsedTime = round(time.time() - AFKTimeStart, 2)
             AFKTimerActive = False
             if (AFKElapsedTime > AFKLongestLength):
                 AFKLongestLength = AFKElapsedTime
-
-def sittingTimerInit(sittingTimerActive):
-    sittingTimerActive = True
-    return time.time()
         
 if __name__ == '__main__':
     socketio.run(app, port=3001)
