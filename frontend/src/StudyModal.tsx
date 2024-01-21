@@ -19,6 +19,7 @@ import {
     Text,
     CircularProgress,
     CircularProgressLabel,
+    HStack,
   } from '@chakra-ui/react'
 import { useEffect, useRef, useState } from 'react'
 import WebcamWrapper, { WebcamWrapperMethods } from './WebcamWrapper'
@@ -36,7 +37,7 @@ function StudyModal() {
     const [shortBreakInput, setShortBreakInput] = useState('')
     const [longBreakInput, setLongBreakInput] = useState('')
     const [amountInput, setAmountInput] = useState('')
-    const [, setButtonClicked] = useState(false); // New state variable
+    const [, setButtonClicked] = useState(false); 
     const [studyState, setStudyState] = useState('idle');
 
     const handleGoalInputChange = (e: any) => setGoalInput(e.target.value)
@@ -55,19 +56,17 @@ function StudyModal() {
     const handleButtonClick = () => {
         // Implement the logic to handle different states
         if (studyState === 'idle' || studyState === 'statistics') {
-            setGoalInput('');
-            setSessionInput('');
-            setShortBreakInput('');
-            setLongBreakInput('');
-            setAmountInput('');
             setButtonClicked(true);
             onClose();
             setStudyState('studying');
             start(time)
         } else if (studyState === 'studying') {
-          // Handle transitioning to the statistics page
-          // You can set up your statistics page component and navigate to it here
-          setStudyState('statistics');
+            setGoalInput('');
+            setSessionInput('');
+            setShortBreakInput('');
+            setLongBreakInput('');
+            setAmountInput('');
+            setStudyState('statistics');
         }
     }
 
@@ -100,9 +99,12 @@ function StudyModal() {
       {studyState === 'studying' && (
       <Box>
         <Center>
-            <CircularProgress value={percentage} color='green.400' size="100px">
-                <CircularProgressLabel>{secondsLeft}</CircularProgressLabel>
-            </CircularProgress>
+            <HStack spacing='24px'>
+                <CircularProgress value={percentage} color='green.400' size="100px">
+                    <CircularProgressLabel>{secondsLeft}</CircularProgressLabel>
+                </CircularProgress>
+                <Text fontSize='4xl'> {"Goal: " + goalInput}</Text>
+            </HStack>
         </Center>
         <Center>
             <WebcamWrapper studyState={studyState} ref={webRef}/>

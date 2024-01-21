@@ -12,7 +12,7 @@ function App() {
         bgClip="text"
         mt={4}
       >
-        Study with me!
+        CramCam!
       </Heading>
       <StudyModal />
     </>
