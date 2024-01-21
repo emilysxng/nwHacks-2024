@@ -26,7 +26,7 @@ import useCountdown from './useCountdown'
   
 function StudyModal() {
     const { isOpen, onOpen, onClose } = useDisclosure()
-    const { secondsLeft, ratio, start } = useCountdown()
+    const { secondsLeft, percentage, start } = useCountdown()
     
     const [goalInput, setGoalInput] = useState('')
     const [sessionInput, setSessionInput] = useState('')
@@ -80,7 +80,7 @@ function StudyModal() {
       {studyState === 'studying' && (
       <Box>
         <Center>
-            <CircularProgress value={ratio} color='green.400' size="100px">
+            <CircularProgress value={percentage} color='green.400' size="100px">
                 <CircularProgressLabel>{secondsLeft}</CircularProgressLabel>
             </CircularProgress>
         </Center>

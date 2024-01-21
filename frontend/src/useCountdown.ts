@@ -3,7 +3,7 @@ import { useState, useEffect } from "react"
 export default function useCountdown() {
     const[secondsLeft, setSecondsLeft] = useState(0);
     const [initialSeconds, setInitialSeconds] = useState(0);
-    const [ratio, setRatio] = useState(0);
+    const [percentage, setPercentage] = useState(0);
 
     useEffect(() => {
         if(secondsLeft <= 0) return;
@@ -23,9 +23,9 @@ export default function useCountdown() {
     }
 
     function updateRatio() {
-        const newRatio = initialSeconds > 0 ? (100*(secondsLeft / initialSeconds)) : 0;
-        setRatio(newRatio);
+        const newPercentage = initialSeconds > 0 ? (100*((secondsLeft-1) / initialSeconds)) : 0;
+        setPercentage(newPercentage);
     }
 
-    return {secondsLeft, ratio, start};
+    return {secondsLeft, percentage, start};
 }
