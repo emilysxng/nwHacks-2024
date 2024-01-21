@@ -7,13 +7,12 @@ from PIL import Image
 import numpy as np
 from session import Classification, Session
 from study_session import faceDetection, eyeDetection
+from backend.session import Classification, Session
 import pyaudio
-from statistics import mean
 import wave
 import numpy as np
-import wavio
-import math
 import concurrent.futures
+import scipy.io.wavfile as wav
 
 app = Flask(__name__)
 CORS(app, origins="*")
@@ -110,10 +109,10 @@ def end_study():
     wf.setframerate(44100)
     wf.writeframes(b''.join(frames))
     wf.close()
-    wav_data = wavio.read("output.wav")
-    audio_data = wav_data.data.T[0]
-    chunks = np.array_split(audio_data, audio_data.size/(44100/2))
-    avgdB = mean([20*math.log10(np.abs(math.sqrt(mean(chunk**2))) ) for chunk in chunks]) #half second chunks
+    samprate, wavData = wav.read("output.wav")
+    maxAmplitude = np.max(np.abs(wavData))
+    wavDataNormalized = wavData / maxAmplitude
+    avgdB = -20 * np.log10(np.sqrt(np.mean((wavDataNormalized.astype(np.float64) / maxAmplitude)**2)))
 
     # clean up variables for analysis
     studyProportion = session.get_study_frame_count() / session.get_total_frame_count()
@@ -142,8 +141,6 @@ def end_study():
     # print("The longest time you spent AFK is", AFKLongestLength, "seconds")
     # print("The longest time you spent sitting down is", sittingLongestLength, "seconds")
 
-    # socketio.emit()
-
 def faceDetection(videoFrame, cascadeClassifierFace):
     greyVideoFrame = cv2.cvtColor(videoFrame, cv2.COLOR_BGR2GRAY)
     # arguments for detectMultiScale: image to be searched, scale factor, min neighbors, min size of face
@@ -171,7 +168,7 @@ def recordAudio():
                     frames_per_buffer=1024,
                     input=True)
     frames = []
-    while session.isActive is True:
+    while session.isActive() is True:
         data = stream.read(1024)
         frames.append(data)
 

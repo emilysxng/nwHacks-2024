@@ -4,6 +4,7 @@ import wave
 import numpy as np
 import wavio
 import math
+import scipy.io.wavfile as wav
 
 def measure_decibels():
     chunk = 1024
@@ -50,13 +51,16 @@ def measure_decibels():
     wf.close()
 
     # Load the .wav file
-    wav_data = wavio.read(filename)
+   # wav_data = wavio.read(filename)
 
     # Extract audio data from the wavio.Wav object
-    audio_data = wav_data.data.T[0]  # Extract the first channel
+   # audio_data = wav_data.data.T[0]  # Extract the first channel
+    sample_rate, wav_data = wav.read("output.wav")
 
-    chunks = np.array_split(audio_data, audio_data.size/(44100/2))
-    dbs = [20*math.log10(np.abs(math.sqrt(mean(chunk**2))) ) for chunk in chunks] #half second chunks
-    dbs = mean(dbs)
-    print(dbs)
+    max_amplitude = np.max(np.abs(wav_data))
+
+    wav_data_normalized = wav_data / max_amplitude
+
+    average_decibel = -20 * np.log10(np.sqrt(np.mean((wav_data_normalized.astype(np.float64) / max_amplitude)**2)))
+    print(average_decibel)
 
