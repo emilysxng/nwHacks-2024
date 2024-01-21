@@ -5,8 +5,15 @@ from flask_cors import CORS
 import cv2, time, base64
 from PIL import Image
 import numpy as np
-from session import Classification, Session
-from study_session import faceDetection, eyeDetection
+from backend.session import Classification, Session
+from old.study_session import faceDetection, eyeDetection
+import pyaudio
+from statistics import mean
+import wave
+import numpy as np
+import wavio
+import math
+import concurrent.futures
 
 app = Flask(__name__)
 CORS(app, origins="*")
@@ -50,7 +57,6 @@ def start_study():
     session = Session()
     session.start_stopwatch()
     print('Client started study')
-    
 
 @socketio.on('frame')
 def handle_frame(data: str):
@@ -93,11 +99,10 @@ def end_study():
     print('Client ended study session')
     session.stop_stopwatch()
     # clean up variables for analysis
-    studyProportion = session.get_study_frame_count() / session.get_total_frame_count()
-    lookDownProportion = session.get_distr_frame_count() / session.get_total_frame_count()
-    afkProportion = session.get_afk_frame_count() / session.get_total_frame_count()
-
-    avgFrameTime = session.get_elapsed_time() / session.get_total_frame_count()
+    studyProportion = session.get_study_frame_count / session.get_total_frame_count
+    lookDownProportion = session.get_distr_frame_count / session.get_total_frame_count
+    afkProportion = session.get_afk_frame_count / session.get_total_frame_count
+    avgFrameTime = session.get_elapsed_time / session.get_total_frame_count
     afkLongestLength = session.get_max_class_count(Classification.AFK) * avgFrameTime
     sittingLongestLength = (session.get_max_class_count(Classification.STUDY)
                             + session.get_max_class_count(Classification.DISTRACTED)) * avgFrameTime
@@ -139,13 +144,33 @@ def eyeDetection(videoFrame, cascadeClassifierEyes):
         cv2.rectangle(videoFrame, (x, y), (x + w, y + h), (0, 255, 0), 2)
     return eyes
 
-# def AFKTimerEnd():
-#     global AFKTimerActive, AFKElapsedTime, AFKLongestLength
-#     if (AFKTimerActive is True):
-#             AFKElapsedTime = round(time.time() - AFKTimeStart, 2)
-#             AFKTimerActive = False
-#             if (AFKElapsedTime > AFKLongestLength):
-#                 AFKLongestLength = AFKElapsedTime
+def recordAudio():
+    global stream
+    chunk = 1024
+    sample_format = pyaudio.paInt16  #16 bits per sample
+    channels = 2
+    fs = 44100
+    filename = "output.wav"
+    p = pyaudio.PyAudio()
+
+    stream = p.open(format=sample_format,
+                    channels=channels,
+                    rate=fs,
+                    frames_per_buffer=chunk,
+                    input=True)
+    frames = []
+    while True:
+        data = stream.read(chunk)
+        frames.append(data)
+
+#unused
+def AFKTimerEnd():
+    global AFKTimerActive, AFKElapsedTime, AFKLongestLength
+    if (AFKTimerActive is True):
+            AFKElapsedTime = round(time.time() - AFKTimeStart, 2)
+            AFKTimerActive = False
+            if (AFKElapsedTime > AFKLongestLength):
+                AFKLongestLength = AFKElapsedTime
         
 if __name__ == '__main__':
     socketio.run(app, port=3001)
