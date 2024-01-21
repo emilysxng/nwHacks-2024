@@ -7,7 +7,7 @@ from PIL import Image
 import numpy as np
 from session import Classification, Session
 from study_session import faceDetection, eyeDetection
-from backend.session import Classification, Session
+from session import Classification, Session
 import pyaudio
 import wave
 import numpy as np
@@ -98,6 +98,7 @@ def majorityOfLastFrames(thisFrame, frameCount):
 def end_study():
     print('Client ended study session')
     session.stop_stopwatch()
+
     #getting data info
     audioFuture.result()
     stream.stop_stream()
@@ -130,7 +131,7 @@ def end_study():
         "afkCount": session.get_afk_count(),
         "afkLongestLength": afkLongestLength,
         "sittingLongestLength": sittingLongestLength,
-        "averageDecibel": avgdB
+        #"averageDecibel": avgdB
     })
 
     # print("Total study session length:", session.get_elapsed_time, "seconds")

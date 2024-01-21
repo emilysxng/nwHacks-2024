@@ -178,6 +178,24 @@ function StudyModal() {
                 <Text>Loading...</Text>
             )}
             <Center>
+                <Text fontSize='lg'>AFK: The longest time you spent away from your keyboard was {afkLongestLength}</Text>
+            </Center>
+            {afkLongestLength !== undefined ? (
+                afkLongestLength < 600 ? (
+                <Center>
+                    <Text fontSize='lg'>This reduces your momentum, making it hard to pick up where you left off - leading to even more time wasted to regain your focus and mental energy.</Text>
+                </Center>
+                ) : (
+                    <Center>
+                    <Text fontSize='lg'>
+                        Longer breaks (but not excessive) help substantially in maintaining focus and preventing burnout, which actually benefits you in the long run. 
+                    </Text>
+                </Center>
+                )
+            ) : (
+                <Text>Loading...</Text>
+            )}
+            <Center>
                 <Button onClick={onOpen} size='lg' mt="10px">Start Studying Again!</Button>
             </Center>
         </VStack>
