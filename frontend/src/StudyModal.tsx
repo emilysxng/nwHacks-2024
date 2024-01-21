@@ -26,6 +26,15 @@ import WebcamWrapper, { WebcamWrapperMethods } from './WebcamWrapper'
 import useCountdown from './useCountdown'
 import io from 'socket.io-client'
 
+interface Statistics {
+    studyProportion: number,
+    lookDownProportion: number,
+    afkProportion: number,
+    afkCount: number,
+    afkLongestLength: number,
+    sittingLongestLength: number,
+}
+
 const socket = io('http://localhost:3001');
   
 function StudyModal() {
@@ -85,7 +94,13 @@ function StudyModal() {
             clearInterval(interval);
             socket.emit('end_study');
         }
-    }, [studyState]);
+    }, [studyState])
+
+    useEffect(() => {
+        socket.on('study_session_end', (statistics: Statistics) => {
+            console.log(statistics);
+        });
+    }, []);
     
   return (
     <>
