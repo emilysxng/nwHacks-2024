@@ -29,7 +29,7 @@ class Session:
     def get_afk_count(self):
         return self.__afkCount
 
-    def resetClassCounts(self):
+    def reset_class_count(self):
         if self.__classCounts[Classification.STUDY] > self.__maxClassCounts[Classification.STUDY]:
             self.__maxClassCounts[Classification.STUDY] = self.__classCounts[Classification.STUDY]
         if self.__classCounts[Classification.DISTRACTED] > self.__maxClassCounts[Classification.DISTRACTED]:
