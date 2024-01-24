@@ -105,7 +105,7 @@ def end_study():
     stream.close()
     p.terminate()
     wf = wave.open("output.wav", 'wb')
-    wf.setnchannels(2)
+    wf.setnchannels(1)
     wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
     wf.setframerate(44100)
     wf.writeframes(b''.join(frames))
@@ -131,7 +131,7 @@ def end_study():
         "afkCount": session.get_afk_count(),
         "afkLongestLength": afkLongestLength,
         "sittingLongestLength": sittingLongestLength,
-        #"averageDecibel": avgdB
+        "averageDecibel": avgdB
     })
 
     # print("Total study session length:", session.get_elapsed_time, "seconds")
@@ -164,13 +164,13 @@ def recordAudio():
     global stream, p, frames
     p = pyaudio.PyAudio()
     stream = p.open(format=pyaudio.paInt16,
-                    channels=2,
+                    channels=1,
                     rate=44100,
                     frames_per_buffer=1024,
                     input=True)
     frames = []
-    while session.isActive() is True:
-        data = stream.read(1024)
+    while session.is_active() is True:
+        data = stream.read(1024, exception_on_overflow = False)
         frames.append(data)
 
 #def AFKTimerEnd():

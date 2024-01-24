@@ -37,6 +37,7 @@ interface Statistics {
     afkCount: number,
     afkLongestLength: number,
     sittingLongestLength: number,
+    averageDecibel: number,
 }
 
 const socket = io('http://localhost:3001');
@@ -58,7 +59,8 @@ function StudyModal() {
     const [lookDownProportion, setLookDownProportion] = useState<number>()
     const [afkProportion, setAfkProportion] = useState<number>()
     const [afkLongestLength, setAfkLongestLength] = useState<number>()
-    const [afkCount, setAfkCount] = useState<number>()
+    const [, setAfkCount] = useState<number>()
+    const [averageDecibel, setAverageDecibel] = useState<number>()
 
     const handleGoalInputChange = (e: any) => setGoalInput(e.target.value)
     const handleSessionInputChange = (e : any) => setSessionInput(e.target.value)
@@ -97,7 +99,7 @@ function StudyModal() {
                 if (studyState === 'studying') {
                     webRef.current?.capture();
                 }
-            });
+            }, 150);
         } else if (studyState === 'statistics') {
             clearInterval(interval);
             socket.emit('end_study');
@@ -110,8 +112,10 @@ function StudyModal() {
             setSittingLongestLength((Number(statistics.sittingLongestLength.toFixed(4))));
             setLookDownProportion((Number(statistics.lookDownProportion.toFixed(4)))*100);
             setAfkProportion((Number(statistics.afkProportion.toFixed(4)))*100);
-            setAfkLongestLength((Number((statistics.afkLongestLength).toFixed(4))));
+            setAfkLongestLength(Number((statistics.afkLongestLength).toFixed(4)));
             setAfkCount(statistics.afkCount);
+            setAverageDecibel(Number((statistics.averageDecibel).toFixed(2)));
+            
             console.log(statistics);
         });
     }, []);
@@ -178,7 +182,7 @@ function StudyModal() {
                 <Text>Loading...</Text>
             )}
             <Center>
-                <Text fontSize='lg'>AFK: The longest time you spent away from your keyboard was {afkLongestLength}</Text>
+                <Text fontSize='lg'>AFK: The longest time you spent away from your keyboard was {afkLongestLength} seconds</Text>
             </Center>
             {afkLongestLength !== undefined ? (
                 afkLongestLength < 600 ? (
@@ -189,6 +193,24 @@ function StudyModal() {
                     <Center>
                     <Text fontSize='lg'>
                         Longer breaks (but not excessive) help substantially in maintaining focus and preventing burnout, which actually benefits you in the long run. 
+                    </Text>
+                </Center>
+                )
+            ) : (
+                <Text>Loading...</Text>
+            )}
+            <Center>
+                <Text fontSize='lg'>Sound: The volume of your surroundings is: {averageDecibel} decibels.</Text>
+            </Center>
+            {averageDecibel !== undefined ? (
+                averageDecibel > 50 ? (
+                <Center>
+                    <Text fontSize='lg'> Your environment is very loud, which may distract you and put you out of your flow state.</Text>
+                </Center>
+                ) : (
+                    <Center>
+                    <Text fontSize='lg'>
+                        You are in a good environment for learning as it is pretty quiet and allows you to focus well.
                     </Text>
                 </Center>
                 )
@@ -219,7 +241,7 @@ function StudyModal() {
                 )}
             </FormControl>
             <FormControl isInvalid={isSessionError}>
-                <FormLabel>Time:</FormLabel>
+                <FormLabel>Time (in minutes):</FormLabel>
                 <Input type='number' value={sessionInput} onChange={handleSessionInputChange} />
                 {!isSessionError ? (
                     <FormHelperText>
@@ -230,7 +252,7 @@ function StudyModal() {
                 )}
             </FormControl>
             <FormControl isInvalid={isBreakError}>
-                <FormLabel>Break time:</FormLabel>
+                <FormLabel>Break time (in minutes):</FormLabel>
                 <Input type='number' value={BreakInput} onChange={handleBreakInputChange} />
                 {!isBreakError ? (
                     <FormHelperText>
